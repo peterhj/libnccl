@@ -1,5 +1,8 @@
 #![allow(non_camel_case_types)]
 
+extern crate cuda;
+extern crate libc;
+
 use cuda::ffi::runtime::{cudaStream_t};
 use libc::*;
 
@@ -10,7 +13,7 @@ pub const NCCL_UNIQUE_ID_BYTES: usize = 128;
 
 #[repr(C)]
 pub struct ncclUniqueId {
-  internal: [c_char; NCCL_UNIQUE_ID_BYTES],
+  pub internal: [c_char; NCCL_UNIQUE_ID_BYTES],
 }
 
 impl Clone for ncclUniqueId {
@@ -21,7 +24,7 @@ impl Clone for ncclUniqueId {
   }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 #[repr(C)]
 pub enum ncclResult_t {
   Success                   = 0,
