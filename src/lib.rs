@@ -30,18 +30,18 @@ impl NcclOp for NcclSumOp {
 }
 
 #[derive(Clone)]
-pub struct NcclCommId {
+pub struct NcclUniqueId {
   raw:  ncclUniqueId,
 }
 
-impl NcclCommId {
-  pub fn create() -> Result<NcclCommId, ncclResult_t> {
+impl NcclUniqueId {
+  pub fn create() -> Result<NcclUniqueId, ncclResult_t> {
     let mut raw = ncclUniqueId{internal: [0; NCCL_UNIQUE_ID_BYTES]};
     let res = unsafe { ncclGetUniqueId(&mut raw as *mut _) };
     if res != ncclResult_t::Success {
       return Err(res);
     }
-    Ok(NcclCommId{raw: raw})
+    Ok(NcclUniqueId{raw: raw})
   }
 }
 
@@ -56,7 +56,7 @@ impl Drop for NcclComm {
 }
 
 impl NcclComm {
-  pub fn create(rank: usize, num_devices: usize, comm_id: NcclCommId) -> Result<NcclComm, ncclResult_t> {
+  pub fn create(rank: usize, num_devices: usize, comm_id: NcclUniqueId) -> Result<NcclComm, ncclResult_t> {
     let mut inner: ncclComm_t = null_mut();
     let res = unsafe { ncclCommInitRank(&mut inner as *mut _, num_devices as c_int, comm_id.raw.clone(), rank as c_int) };
     if res != ncclResult_t::Success {
@@ -92,7 +92,7 @@ impl NcclComm {
     Ok(count as usize)
   }
 
-  pub unsafe fn all_reduce<T, Op>(&self, src: *const T, dst: *mut T, len: usize, _op: Op, stream: cudaStream_t) -> Result<(), ncclResult_t>
+  pub unsafe fn allreduce<T, Op>(&self, src: *const T, len: usize, dst: *mut T, _op: Op, stream: cudaStream_t) -> Result<(), ncclResult_t>
   where T: NcclDataType, Op: NcclOp {
     let res = ncclAllReduce(src as *const _, dst as *mut _, len as c_int, T::kind(), Op::kind(), self.ptr, stream);
     if res != ncclResult_t::Success {
