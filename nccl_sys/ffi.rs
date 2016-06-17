@@ -77,7 +77,7 @@ extern "C" {
   pub fn ncclCommUserRank(comm: ncclComm_t, rank: *mut c_int) -> ncclResult_t;
   pub fn ncclReduce(sendbuf: *const c_void, recvbuf: *mut c_void, count: c_int, datatype: ncclDataType_t, op: ncclRedOp_t, root: c_int, comm: ncclComm_t, stream: cudaStream_t) -> ncclResult_t;
   pub fn ncclAllReduce(sendbuf: *const c_void, recvbuf: *mut c_void, count: c_int, datatype: ncclDataType_t, op: ncclRedOp_t, comm: ncclComm_t, stream: cudaStream_t) -> ncclResult_t;
-  pub fn ncclReduceScatter(sendbuf: *const c_void, recvbuf: *mut c_void, recvcount: c_int, datatype: ncclDataType_t, op: ncclRedOp_t, root: c_int, comm: ncclComm_t, stream: cudaStream_t) -> ncclResult_t;
+  pub fn ncclReduceScatter(sendbuf: *const c_void, recvbuf: *mut c_void, recvcount: c_int, datatype: ncclDataType_t, op: ncclRedOp_t, comm: ncclComm_t, stream: cudaStream_t) -> ncclResult_t;
   pub fn ncclBcast(buf: *mut c_void, count: c_int, datatype: ncclDataType_t, root: c_int, comm: ncclComm_t, stream: cudaStream_t) -> ncclResult_t;
   pub fn ncclAllGather(sendbuf: *const c_void, count: c_int, datatype: ncclDataType_t, recvbuf: *mut c_void, comm: ncclComm_t, stream: cudaStream_t) -> ncclResult_t;
 }

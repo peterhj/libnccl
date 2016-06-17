@@ -1,22 +1,47 @@
 extern crate nccl_sys;
 
 extern crate cuda;
+extern crate float;
 extern crate libc;
 
-use cuda::ffi::runtime::{cudaStream_t};
 use nccl_sys::*;
 
+use cuda::ffi::runtime::{cudaStream_t};
+use float::stub::{f16_stub};
 use libc::*;
-use std::ptr::{null_mut};
 
-//pub mod ffi;
+use std::ptr::{null_mut};
 
 pub trait NcclDataType {
   fn kind() -> ncclDataType_t;
 }
 
+impl NcclDataType for i8 {
+  fn kind() -> ncclDataType_t { ncclDataType_t::Char }
+}
+
+impl NcclDataType for i32 {
+  fn kind() -> ncclDataType_t { ncclDataType_t::Int }
+}
+
+impl NcclDataType for i64 {
+  fn kind() -> ncclDataType_t { ncclDataType_t::Int64 }
+}
+
+impl NcclDataType for u64 {
+  fn kind() -> ncclDataType_t { ncclDataType_t::Uint64 }
+}
+
+impl NcclDataType for f16_stub {
+  fn kind() -> ncclDataType_t { ncclDataType_t::Half }
+}
+
 impl NcclDataType for f32 {
   fn kind() -> ncclDataType_t { ncclDataType_t::Float }
+}
+
+impl NcclDataType for f64 {
+  fn kind() -> ncclDataType_t { ncclDataType_t::Double }
 }
 
 pub trait NcclOp {
@@ -27,6 +52,24 @@ pub struct NcclSumOp;
 
 impl NcclOp for NcclSumOp {
   fn kind() -> ncclRedOp_t { ncclRedOp_t::Sum }
+}
+
+pub struct NcclProdOp;
+
+impl NcclOp for NcclProdOp {
+  fn kind() -> ncclRedOp_t { ncclRedOp_t::Prod }
+}
+
+pub struct NcclMaxOp;
+
+impl NcclOp for NcclMaxOp {
+  fn kind() -> ncclRedOp_t { ncclRedOp_t::Max }
+}
+
+pub struct NcclMinOp;
+
+impl NcclOp for NcclMinOp {
+  fn kind() -> ncclRedOp_t { ncclRedOp_t::Min }
 }
 
 #[derive(Clone)]
@@ -92,9 +135,45 @@ impl NcclComm {
     Ok(count as usize)
   }
 
+  pub unsafe fn reduce<T, Op>(&self, src: *const T, len: usize, dst: *mut T, _op: Op, root: usize, stream: cudaStream_t) -> Result<(), ncclResult_t>
+  where T: NcclDataType, Op: NcclOp {
+    let res = ncclReduce(src as *const _, dst as *mut _, len as c_int, T::kind(), Op::kind(), root as c_int, self.ptr, stream);
+    if res != ncclResult_t::Success {
+      return Err(res);
+    }
+    Ok(())
+  }
+
   pub unsafe fn allreduce<T, Op>(&self, src: *const T, len: usize, dst: *mut T, _op: Op, stream: cudaStream_t) -> Result<(), ncclResult_t>
   where T: NcclDataType, Op: NcclOp {
     let res = ncclAllReduce(src as *const _, dst as *mut _, len as c_int, T::kind(), Op::kind(), self.ptr, stream);
+    if res != ncclResult_t::Success {
+      return Err(res);
+    }
+    Ok(())
+  }
+
+  pub unsafe fn reduce_scatter<T, Op>(&self, src: *const T, _src_len: usize, dst: *mut T, dst_len: usize, _op: Op, stream: cudaStream_t) -> Result<(), ncclResult_t>
+  where T: NcclDataType, Op: NcclOp {
+    let res = ncclReduceScatter(src as *const _, dst as *mut _, dst_len as c_int, T::kind(), Op::kind(), self.ptr, stream);
+    if res != ncclResult_t::Success {
+      return Err(res);
+    }
+    Ok(())
+  }
+
+  pub unsafe fn broadcast<T>(&self, buf: *mut T, len: usize, root: usize, stream: cudaStream_t) -> Result<(), ncclResult_t>
+  where T: NcclDataType {
+    let res = ncclBcast(buf as *mut _, len as c_int, T::kind(), root as c_int, self.ptr, stream);
+    if res != ncclResult_t::Success {
+      return Err(res);
+    }
+    Ok(())
+  }
+
+  pub unsafe fn allgather<T>(&self, src: *const T, src_len: usize, dst: *mut T, _dst_len: usize, stream: cudaStream_t) -> Result<(), ncclResult_t>
+  where T: NcclDataType {
+    let res = ncclAllGather(src as *const _, src_len as c_int, T::kind(), dst as *mut _, self.ptr, stream);
     if res != ncclResult_t::Success {
       return Err(res);
     }

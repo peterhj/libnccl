@@ -13,4 +13,5 @@ gcc = "*"
 [dependencies]
 nccl_sys = { path = "nccl_sys" }
 cuda = { git = "https://github.com/peterhj/libcuda.git" }
+float = "*"
 libc = "*"
