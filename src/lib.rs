@@ -1,16 +1,17 @@
-extern crate nccl_sys;
-
 extern crate cuda;
 extern crate float;
 extern crate libc;
 
-use nccl_sys::*;
+use ffi::*;
 
 use cuda::ffi::runtime::{cudaStream_t};
 use float::stub::{f16_stub};
 use libc::*;
 
+use std::i32;
 use std::ptr::{null_mut};
+
+pub mod ffi;
 
 pub trait NcclDataType {
   fn kind() -> ncclDataType_t;
@@ -135,8 +136,9 @@ impl NcclComm {
     Ok(count as usize)
   }
 
-  pub unsafe fn reduce<T, Op>(&self, src: *const T, len: usize, dst: *mut T, _op: Op, root: usize, stream: cudaStream_t) -> Result<(), ncclResult_t>
+  pub unsafe fn reduce<T, Op>(&self, src: *const T, dst: *mut T, len: usize, _op: Op, root: usize, stream: cudaStream_t) -> Result<(), ncclResult_t>
   where T: NcclDataType, Op: NcclOp {
+    assert!(len <= i32::MAX as usize);
     let res = ncclReduce(src as *const _, dst as *mut _, len as c_int, T::kind(), Op::kind(), root as c_int, self.ptr, stream);
     if res != ncclResult_t::Success {
       return Err(res);
@@ -144,8 +146,9 @@ impl NcclComm {
     Ok(())
   }
 
-  pub unsafe fn allreduce<T, Op>(&self, src: *const T, len: usize, dst: *mut T, _op: Op, stream: cudaStream_t) -> Result<(), ncclResult_t>
+  pub unsafe fn allreduce<T, Op>(&self, src: *const T, dst: *mut T, len: usize, _op: Op, stream: cudaStream_t) -> Result<(), ncclResult_t>
   where T: NcclDataType, Op: NcclOp {
+    assert!(len <= i32::MAX as usize);
     let res = ncclAllReduce(src as *const _, dst as *mut _, len as c_int, T::kind(), Op::kind(), self.ptr, stream);
     if res != ncclResult_t::Success {
       return Err(res);
@@ -164,6 +167,7 @@ impl NcclComm {
 
   pub unsafe fn broadcast<T>(&self, buf: *mut T, len: usize, root: usize, stream: cudaStream_t) -> Result<(), ncclResult_t>
   where T: NcclDataType {
+    assert!(len <= i32::MAX as usize);
     let res = ncclBcast(buf as *mut _, len as c_int, T::kind(), root as c_int, self.ptr, stream);
     if res != ncclResult_t::Success {
       return Err(res);

@@ -2,16 +2,19 @@
 name = "nccl"
 version = "0.0.1"
 authors = ["Peter Jin <peterhaijin@gmail.com>"]
+build = "build.rs"
 
 [lib]
 name = "nccl"
 path = "src/lib.rs"
 
 [build-dependencies]
-gcc = "*"
+#gcc = "*"
+walkdir = "*"
 
 [dependencies]
-nccl_sys = { path = "nccl_sys" }
-cuda = { git = "https://github.com/peterhj/libcuda.git" }
-float = "*"
+#nccl_sys = { path = "nccl_sys" }
+#cuda = { git = "https://github.com/peterhj/libcuda.git" }
+cuda = "^0.1"
+float = "^0.1"
 libc = "*"

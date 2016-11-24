@@ -65,7 +65,7 @@ pub enum ncclDataType_t {
   Uint64    = 6,
 }
 
-#[link(name = "nccl_native", kind = "static")]
+#[link(name = "nccl_static", kind = "static")]
 extern "C" {
   pub fn ncclGetUniqueId(uniqueId: *mut ncclUniqueId) -> ncclResult_t;
   pub fn ncclCommInitRank(comm: *mut ncclComm_t, ndev: c_int, commId: ncclUniqueId, rank: c_int) -> ncclResult_t;
